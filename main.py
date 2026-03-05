@@ -8,7 +8,7 @@ import time
 from flask import Flask
 from threading import Thread
 
-# --- サーバー維持用 (405エラー対策済み) ---
+# --- サーバー維持用 (Renderの寝落ち防止) ---
 app = Flask('')
 @app.route('/', methods=['GET', 'POST'])
 def home(): 
@@ -29,11 +29,15 @@ class MyBot(commands.Bot):
         super().__init__(command_prefix="!", intents=intents, help_command=None)
 
     async def setup_hook(self):
-        # 起動時にスラッシュコマンドを同期
         await self.tree.sync()
         print("✅ スラッシュコマンドを同期しました")
 
 bot = MyBot()
+
+@bot.event
+async def on_ready():
+    print(f'Logged in as {bot.user}')
+    print('Bot is ready!')
 
 # --- データ保存の仕組み ---
 DB_FILE = "server_data.json"
@@ -67,12 +71,10 @@ def get_slots():
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def sync(ctx):
-    """コマンドが出ない時に手動で同期する用"""
     await bot.tree.sync()
     await ctx.send("✅ スラッシュコマンドを最新の状態に更新しました！")
 
 # --- スラッシュコマンド群 ---
-
 @bot.tree.command(name="全時間", description="【全時間帯】の管理表を表示します")
 async def setup_slash(interaction: discord.Interaction):
     db = load_data()
@@ -130,15 +132,12 @@ class ReserveButton(discord.ui.Button):
         data = db[self.gid][self.index]
         user = interaction.user
         is_admin = user.guild_permissions.administrator
-
         if data["status"] == 1 and data["uid"] != user.id and not is_admin:
             return await interaction.response.send_message("❌ 他人の予約は変更できません", ephemeral=True)
-
         if is_admin: 
             data["status"] = (data["status"] + 1) % 3
         else: 
             data["status"] = 1 if data["status"] == 0 else 0
-
         data["user"] = user.display_name if data["status"] == 1 else ("不可" if data["status"] == 2 else "空き")
         data["uid"] = user.id if data["status"] == 1 else None
         save_data(db)
@@ -158,13 +157,14 @@ def gen_view(gid, slots, is_second):
 # --- 実行 ---
 if __name__ == "__main__":
     keep_alive()
-    
-    # 新しいトークンを直接指定して実行
-    TOKEN = "MTQ3ODc0MzMxMTgzNjc3ODY4OA.G1fRFY.CGolPOAHIUmrFg5UcxdOs6D1cwDor02C9pJEP0"
-    
-    while True:
-        try:
-            bot.run(TOKEN, reconnect=True)
-        except Exception as e:
-            print(f"💥 Fatal Error: {e}. Restarting process in 10s...")
-            time.sleep(10)
+    # RenderのEnvironmentで設定したトークンを読み込む
+    TOKEN = os.getenv('DISCORD_TOKEN')
+    if not TOKEN:
+        print("❌ DISCORD_TOKENが見つかりません。Renderの設定を確認してください。")
+    else:
+        while True:
+            try:
+                bot.run(TOKEN, reconnect=True)
+            except Exception as e:
+                print(f"💥 Error: {e}. Restarting...")
+                time.sleep(10)
