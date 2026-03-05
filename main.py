@@ -10,12 +10,13 @@ from threading import Thread
 
 # --- サーバー維持用 (Renderの寝落ち防止) ---
 app = Flask('')
-@app.route('/', methods=['GET', 'POST'])
+
+@app.route('/')
 def home(): 
     return f"Bot is active! {datetime.datetime.now()}"
 
 def run(): 
-    app.run(host='0.0.0.0', port=8080)
+    app.run(host='0.0.0.0', port=10000) # Renderのデフォルトポートに変更
 
 def keep_alive():
     t = Thread(target=run)
@@ -29,6 +30,7 @@ class MyBot(commands.Bot):
         super().__init__(command_prefix="!", intents=intents, help_command=None)
 
     async def setup_hook(self):
+        # スラッシュコマンドをDiscordに登録
         await self.tree.sync()
         print("✅ スラッシュコマンドを同期しました")
 
@@ -157,14 +159,10 @@ def gen_view(gid, slots, is_second):
 # --- 実行 ---
 if __name__ == "__main__":
     keep_alive()
-    # RenderのEnvironmentで設定したトークンを読み込む
+    # RenderのEnvironmentで設定した「DISCORD_TOKEN」を読み込む
     TOKEN = os.getenv('DISCORD_TOKEN')
-    if not TOKEN:
-        print("❌ DISCORD_TOKENが見つかりません。Renderの設定を確認してください。")
+    
+    if TOKEN:
+        bot.run(TOKEN)
     else:
-        while True:
-            try:
-                bot.run(TOKEN, reconnect=True)
-            except Exception as e:
-                print(f"💥 Error: {e}. Restarting...")
-                time.sleep(10)
+        print("❌ DISCORD_TOKENがEnvironment Variablesに設定されていません！")
