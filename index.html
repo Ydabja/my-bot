@@ -18,12 +18,12 @@
         .btn { border: none; padding: 12px; border-radius: 10px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.2s; }
         .btn-p { background: var(--p); color: white; }
         .btn-g { background: var(--g); color: white; }
-        .btn-r { background: var(--r); color: white; margin-top: 20px; font-size: 0.8rem; }
+        .btn-r { background: var(--r); color: white; margin-top: 10px; font-size: 0.8rem; }
         .schedule-display { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
         .schedule-display td { padding: 10px; border-bottom: 1px solid #eee; }
         .schedule-display td:first-child { font-weight: bold; color: var(--p); width: 70px; }
         .list-area { margin-top: 15px; display: none; border-top: 1px solid #eee; padding-top: 10px; }
-        .list-item { background: #fdfaff; border-bottom: 1px solid #eee; padding: 10px; font-size: 0.85rem; border-radius: 5px; margin-bottom: 5px; }
+        .list-item { background: #fdfaff; border-bottom: 1px solid #eee; padding: 10px; font-size: 0.85rem; border-radius: 5px; margin-bottom: 5px; word-break: break-all; }
         nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #ddd; height: 70px; }
         .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; color: #888; cursor: pointer; }
         .nav-item.active { color: var(--p); font-weight: bold; }
@@ -43,7 +43,7 @@
         </table>
     </div>
     <div class="card">
-        <p style="font-size:0.7rem; color:var(--p)">【ライバー用編集：合言葉 3939】</p>
+        <p style="font-size:0.7rem; color:var(--p)">【ライバー用編集：合言葉が必要】</p>
         <div id="schedule-inputs"></div>
         <button class="btn btn-p" onclick="saveSchedule()">予定を丸ごと更新</button>
     </div>
@@ -57,7 +57,7 @@
     </div>
     <div class="card">
         <p style="font-size:0.7rem; color:var(--p)">【ライバー専用管理】</p>
-        <button class="btn btn-p" onclick="toggleList('list-song')">リクエスト一覧を表示</button>
+        <button class="btn btn-p" onclick="unlockAndShow('歌枠リクエスト', 'list-song')">リクエスト一覧を表示</button>
         <div id="list-song" class="list-area"></div>
         <button class="btn btn-r" onclick="resetList('歌枠リクエスト')">⚠️ リストをリセット</button>
     </div>
@@ -71,7 +71,7 @@
     </div>
     <div class="card">
         <p style="font-size:0.7rem; color:var(--p)">【ライバー専用管理】</p>
-        <button class="btn btn-p" onclick="toggleList('list-serif')">届いたセリフを表示</button>
+        <button class="btn btn-p" onclick="unlockAndShow('セリフリクエスト', 'list-serif')">届いたセリフを表示</button>
         <div id="list-serif" class="list-area"></div>
         <button class="btn btn-r" onclick="resetList('セリフリクエスト')">⚠️ リストをリセット</button>
     </div>
@@ -84,7 +84,6 @@
 </nav>
 
 <script>
-    // 新しいURLをセット済みです
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwtB-OH_5KXbhrkJeQVq9ik-M6XD1uGusxyTzHJpkxdeMZ49R7t6urxr0HRM7nAVy_L/exec"; 
     const ADMIN_PW = "3939";
 
@@ -95,7 +94,6 @@
         document.querySelectorAll('.nav-item')[n-1].classList.add('active');
     }
 
-    // 予定表の入力欄を7日分作成
     const inputArea = document.getElementById('schedule-inputs');
     for(let i=0; i<7; i++) {
         inputArea.innerHTML += `
@@ -110,8 +108,6 @@
         try {
             const response = await fetch(GAS_URL);
             const data = await response.json();
-            
-            // 予定表の表示と反映
             const sRows = data["予定"] || [];
             const view = document.getElementById('view-schedule');
             view.innerHTML = "";
@@ -125,44 +121,34 @@
                     dayInputs[i-1].value = sRows[i][0];
                     textInputs[i-1].value = sRows[i][1];
                 }
-            } else {
-                view.innerHTML = "<tr><td>未設定</td></tr>";
-            }
-
-            // リクエストリストの描画
-            renderList(data["歌枠リクエスト"], 'list-song');
-            renderList(data["セリフリクエスト"], 'list-serif');
+            } else { view.innerHTML = "<tr><td>未設定</td></tr>"; }
         } catch(e) { console.error(e); }
     }
 
-    function renderList(rows, id) {
-        const el = document.getElementById(id);
-        if(!rows || rows.length <= 1) {
-            el.innerHTML = "<div class='list-item'>まだありません</div>";
-            return;
-        }
-        el.innerHTML = "";
-        rows.slice(1).reverse().forEach(r => {
-            if(r[1]) el.innerHTML += `<div class="list-item">${r[1]}</div>`;
-        });
-    }
-
-    function toggleList(id) {
+    async function unlockAndShow(sheetName, displayId) {
         const pw = prompt("パスワードを入力してください");
         if(pw !== ADMIN_PW) return alert("パスワードが違います");
-        const el = document.getElementById(id);
-        el.style.display = (el.style.display === "block") ? "none" : "block";
+        document.getElementById('loading').style.display = "flex";
+        try {
+            const response = await fetch(GAS_URL);
+            const data = await response.json();
+            const rows = data[sheetName] || [];
+            const el = document.getElementById(displayId);
+            el.innerHTML = "";
+            if(rows.length <= 1) { el.innerHTML = "<div class='list-item'>まだありません</div>"; }
+            else { rows.slice(1).reverse().forEach(r => { if(r[1]) el.innerHTML += `<div class="list-item">${r[1]}</div>`; }); }
+            el.style.display = "block";
+        } catch(e) { alert("データ取得失敗"); }
+        document.getElementById('loading').style.display = "none";
     }
 
     async function saveSchedule() {
-        const pw = prompt("パスワード(3939)");
-        if(pw !== ADMIN_PW) return alert("認証失敗");
+        const pw = prompt("パスワードを入力");
+        if(pw !== ADMIN_PW) return alert("失敗");
         const data = [];
         const days = document.querySelectorAll('.day-input');
         const texts = document.querySelectorAll('.text-input');
-        days.forEach((d, i) => {
-            if(d.value || texts[i].value) data.push([d.value, texts[i].value]);
-        });
+        days.forEach((d, i) => { if(d.value || texts[i].value) data.push([d.value, texts[i].value]); });
         document.getElementById('loading').style.display = "flex";
         await fetch(GAS_URL, {method:"POST", body:JSON.stringify({action:"save_schedule", type:"予定", data: data})});
         location.reload();
@@ -178,9 +164,9 @@
     }
 
     async function resetList(type) {
-        const pw = prompt("リセットパスワード(3939)");
-        if(pw !== ADMIN_PW) return alert("認証失敗");
-        if(!confirm(type + " をすべて消去しますか？")) return;
+        const pw = prompt("認証パスワードを入力");
+        if(pw !== ADMIN_PW) return alert("失敗");
+        if(!confirm(type + " をリセットしますか？")) return;
         document.getElementById('loading').style.display = "flex";
         await fetch(GAS_URL, {method:"POST", body:JSON.stringify({action:"reset_requests", type:type})});
         alert("リセット完了");
