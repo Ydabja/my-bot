@@ -3,61 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🍇 配信サポートボード</title>
+    <title>🍇 配信サポートボードPro</title>
     <style>
-        :root { --p: #7e57c2; --g: #66bb6a; --bg: #f8f5fa; --text: #4a148c; }
+        :root { --p: #7e57c2; --g: #66bb6a; --r: #ef5350; --bg: #f8f5fa; --text: #4a148c; }
         body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 80px; }
         header { background: var(--p); color: white; padding: 15px; text-align: center; font-weight: bold; position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .content { padding: 20px; display: none; max-width: 500px; margin: auto; }
         .content.active { display: block; }
         .card { background: white; border-radius: 15px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #eee; }
         h2 { font-size: 1rem; margin: 0 0 10px 0; border-left: 4px solid var(--g); padding-left: 10px; color: var(--p); }
-        input, textarea { width: 100%; box-sizing: border-box; padding: 12px; margin-top: 8px; border-radius: 8px; border: 1px solid #ddd; font-size: 0.9rem; background: #fafafa; }
-        .btn { border: none; padding: 12px; border-radius: 10px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .schedule-row { display: flex; gap: 5px; margin-bottom: 8px; align-items: center; }
+        .schedule-row input { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 0.8rem; }
+        .day-input { max-width: 80px; }
+        .btn { border: none; padding: 12px; border-radius: 10px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.2s; }
+        .btn:active { opacity: 0.7; }
         .btn-p { background: var(--p); color: white; }
         .btn-g { background: var(--g); color: white; }
-        .schedule-view { white-space: pre-wrap; background: #f3e5f5; padding: 15px; border-radius: 10px; font-size: 0.9rem; min-height: 50px; }
+        .btn-r { background: var(--r); color: white; margin-top: 20px; font-size: 0.8rem; }
+        .schedule-display { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+        .schedule-display td { padding: 10px; border-bottom: 1px solid #eee; }
+        .schedule-display td:first-child { font-weight: bold; color: var(--p); width: 70px; }
         .list-item { background: #fdfaff; border-bottom: 1px solid #eee; padding: 10px; font-size: 0.85rem; }
         nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #ddd; height: 70px; }
         .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; color: #888; }
         .nav-item.active { color: var(--p); font-weight: bold; }
-        #loading { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.7); color: white; padding: 20px; border-radius: 10px; display: none; }
+        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); display: flex; align-items: center; justify-content: center; z-index: 100; display: none; }
     </style>
 </head>
 <body>
 
 <header>🍇 配信サポートボード</header>
-<div id="loading">通信中...</div>
+<div id="loading"><div>処理中...</div></div>
 
 <div id="tab1" class="content active">
     <div class="card">
         <h2>📅 今週の予定</h2>
-        <div id="view-schedule" class="schedule-view">読み込み中...</div>
+        <table id="view-schedule" class="schedule-display">
+            <tr><td>読み込み中...</td></tr>
+        </table>
     </div>
     <div class="card">
         <p style="font-size:0.7rem; color:var(--p)">【ライバー用編集】</p>
-        <input type="text" id="in-range" placeholder="期間（例：3/22〜3/28）">
-        <textarea id="in-text" rows="4" placeholder="予定を入力"></textarea>
-        <button class="btn btn-p" onclick="saveSchedule()">予定を更新する</button>
+        <div id="schedule-inputs"></div>
+        <button class="btn btn-p" onclick="saveSchedule()">予定を丸ごと更新</button>
     </div>
 </div>
 
 <div id="tab2" class="content">
     <div class="card">
         <h2>🎤 曲リクエスト（匿名）</h2>
-        <input type="text" id="in-song" placeholder="曲名などを入力">
+        <input type="text" id="in-song" placeholder="曲名などを入力" style="width:100%; box-sizing:border-box; padding:12px; border-radius:8px; border:1px solid #ddd;">
         <button class="btn btn-g" onclick="sendReq('歌枠リクエスト', 'in-song')">リクエスト送信</button>
     </div>
-    <div id="list-song" class="card" style="max-height: 200px; overflow-y: auto;"></div>
+    <div id="list-song" class="card"></div>
+    <button class="btn btn-r" onclick="resetList('歌枠リクエスト')">⚠️ 歌枠リストをリセット（管理用）</button>
 </div>
 
 <div id="tab3" class="content">
     <div class="card">
         <h2>🎬 セリフ募集（匿名）</h2>
-        <textarea id="in-serif" placeholder="セリフを入力"></textarea>
+        <textarea id="in-serif" placeholder="セリフを入力" style="width:100%; box-sizing:border-box; padding:12px; border-radius:8px; border:1px solid #ddd; height:80px;"></textarea>
         <button class="btn btn-g" onclick="sendReq('セリフリクエスト', 'in-serif')">セリフを送信</button>
     </div>
-    <div id="list-serif" class="card" style="max-height: 200px; overflow-y: auto;"></div>
+    <div id="list-serif" class="card"></div>
+    <button class="btn btn-r" onclick="resetList('セリフリクエスト')">⚠️ セリフリストをリセット（管理用）</button>
 </div>
 
 <nav>
@@ -67,8 +76,9 @@
 </nav>
 
 <script>
-    // ★最新のURLに書き換えました
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwh2R2mbuiSfBbkLz_VIW72BhQHBTTjE48WZuemCoJ-i2P7zhrZ3Un1Ogb_kTOMFNSz/exec";
+    // URLとパスワードを最新状態にしています
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbwBdvjj8X2Rkpz_oa5rSeqN27KinPC4J9T9oIWFX_WF8yP0p2eA2Fhh9pVUvmlminN7/exec"; 
+    const ADMIN_PW = "3939"; 
 
     function showTab(n) {
         document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
@@ -77,25 +87,48 @@
         document.querySelectorAll('.nav-item')[n-1].classList.add('active');
     }
 
+    const inputArea = document.getElementById('schedule-inputs');
+    for(let i=0; i<7; i++) {
+        inputArea.innerHTML += `
+            <div class="schedule-row">
+                <input type="text" class="day-input" placeholder="日付">
+                <input type="text" class="text-input" placeholder="内容">
+            </div>
+        `;
+    }
+
     async function loadData() {
         try {
-            const res = await fetch(GAS_URL);
-            const data = await res.json();
-            
-            const s = data["予定"];
-            document.getElementById('view-schedule').innerText = (s && s[1]) ? s[1][0] + "\n" + s[1][1] : "未設定";
+            const response = await fetch(GAS_URL);
+            const data = await response.json();
+            const sRows = data["予定"] || [];
+            const view = document.getElementById('view-schedule');
+            view.innerHTML = "";
+            const dayInputs = document.querySelectorAll('.day-input');
+            const textInputs = document.querySelectorAll('.text-input');
 
+            if(sRows.length > 1) {
+                for(let i=1; i < sRows.length; i++) {
+                    if(i > 7) break;
+                    view.innerHTML += `<tr><td>${sRows[i][0]}</td><td>${sRows[i][1]}</td></tr>`;
+                    dayInputs[i-1].value = sRows[i][0];
+                    textInputs[i-1].value = sRows[i][1];
+                }
+            } else {
+                view.innerHTML = "<tr><td>未設定</td></tr>";
+            }
             renderList(data["歌枠リクエスト"], 'list-song');
             renderList(data["セリフリクエスト"], 'list-serif');
-        } catch(e) {
-            document.getElementById('view-schedule').innerText = "読み込みエラー。設定を確認してください。";
-        }
+        } catch(e) { console.error(e); }
     }
 
     function renderList(rows, id) {
         const el = document.getElementById(id);
         el.innerHTML = "<h2>届いているもの</h2>";
-        if(!rows || rows.length <= 1) return;
+        if(!rows || rows.length <= 1) {
+            el.innerHTML += "<p style='font-size:0.8rem;color:#999;'>まだありません</p>";
+            return;
+        }
         rows.slice(1).reverse().forEach(r => {
             const d = document.createElement('div');
             d.className = "list-item";
@@ -105,19 +138,38 @@
     }
 
     async function saveSchedule() {
-        const r = document.getElementById('in-range').value;
-        const t = document.getElementById('in-text').value;
-        document.getElementById('loading').style.display = "block";
-        await fetch(GAS_URL, {method:"POST", body:JSON.stringify({action:"save_schedule", type:"予定", range:r, text:t})});
+        const pw = prompt("管理者パスワードを入力してください");
+        if(pw !== ADMIN_PW) return alert("パスワードが違います");
+
+        const data = [];
+        const days = document.querySelectorAll('.day-input');
+        const texts = document.querySelectorAll('.text-input');
+        days.forEach((d, i) => {
+            if(d.value || texts[i].value) data.push([d.value, texts[i].value]);
+        });
+
+        document.getElementById('loading').style.display = "flex";
+        await fetch(GAS_URL, {method:"POST", body:JSON.stringify({action:"save_schedule", type:"予定", data: data})});
         location.reload();
     }
 
     async function sendReq(type, inputId) {
         const v = document.getElementById(inputId).value;
         if(!v) return;
-        document.getElementById('loading').style.display = "block";
+        document.getElementById('loading').style.display = "flex";
         await fetch(GAS_URL, {method:"POST", body:JSON.stringify({action:"add_request", type:type, data:v})});
         alert("送信完了！");
+        location.reload();
+    }
+
+    async function resetList(type) {
+        const pw = prompt("リセット用の管理者パスワードを入力してください");
+        if(pw !== ADMIN_PW) return alert("パスワードが違います");
+
+        if(!confirm(type + " をすべて消去しますか？")) return;
+        document.getElementById('loading').style.display = "flex";
+        await fetch(GAS_URL, {method:"POST", body:JSON.stringify({action:"reset_requests", type:type})});
+        alert("リセットしました");
         location.reload();
     }
 
