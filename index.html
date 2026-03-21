@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍇 配信サポートボード</title>
+    <style>
+        :root { --p: #7e57c2; --g: #66bb6a; --bg: #f8f5fa; --text: #4a148c; }
+        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 80px; }
+        header { background: var(--p); color: white; padding: 15px; text-align: center; font-weight: bold; position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .content { padding: 20px; display: none; max-width: 500px; margin: auto; }
+        .content.active { display: block; }
+        .card { background: white; border-radius: 15px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #eee; }
+        h2 { font-size: 1rem; margin: 0 0 10px 0; border-left: 4px solid var(--g); padding-left: 10px; color: var(--p); }
+        input, textarea { width: 100%; box-sizing: border-box; padding: 12px; margin-top: 8px; border-radius: 8px; border: 1px solid #ddd; font-size: 0.9rem; background: #fafafa; }
+        .btn { border: none; padding: 12px; border-radius: 10px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-p { background: var(--p); color: white; }
+        .btn-g { background: var(--g); color: white; }
+        .schedule-view { white-space: pre-wrap; background: #f3e5f5; padding: 15px; border-radius: 10px; font-size: 0.9rem; min-height: 50px; }
+        .list-item { background: #fdfaff; border-bottom: 1px solid #eee; padding: 10px; font-size: 0.85rem; }
+        nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #ddd; height: 70px; }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; color: #888; }
+        .nav-item.active { color: var(--p); font-weight: bold; }
+        #loading { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.7); color: white; padding: 20px; border-radius: 10px; display: none; }
+    </style>
+</head>
+<body>
+
+<header>🍇 配信サポートボード</header>
+<div id="loading">通信中...</div>
+
+<div id="tab1" class="content active">
+    <div class="card">
+        <h2>📅 今週の予定</h2>
+        <div id="view-schedule" class="schedule-view">読み込み中...</div>
+    </div>
+    <div class="card">
+        <p style="font-size:0.7rem; color:var(--p)">【ライバー用編集】</p>
+        <input type="text" id="in-range" placeholder="期間（例：3/22〜3/28）">
+        <textarea id="in-text" rows="4" placeholder="予定を入力"></textarea>
+        <button class="btn btn-p" onclick="saveSchedule()">予定を更新する</button>
+    </div>
+</div>
+
+<div id="tab2" class="content">
+    <div class="card">
+        <h2>🎤 曲リクエスト（匿名）</h2>
+        <input type="text" id="in-song" placeholder="曲名などを入力">
+        <button class="btn btn-g" onclick="sendReq('歌枠リクエスト', 'in-song')">リクエスト送信</button>
+    </div>
+    <div id="list-song" class="card" style="max-height: 200px; overflow-y: auto;"></div>
+</div>
+
+<div id="tab3" class="content">
+    <div class="card">
+        <h2>🎬 セリフ募集（匿名）</h2>
+        <textarea id="in-serif" placeholder="セリフを入力"></textarea>
+        <button class="btn btn-g" onclick="sendReq('セリフリクエスト', 'in-serif')">セリフを送信</button>
+    </div>
+    <div id="list-serif" class="card" style="max-height: 200px; overflow-y: auto;"></div>
+</div>
+
+<nav>
+    <div class="nav-item active" onclick="showTab(1)">📅予定</div>
+    <div class="nav-item" onclick="showTab(2)">🎤歌枠</div>
+    <div class="nav-item" onclick="showTab(3)">🎬セリフ</div>
+</nav>
+
+<script>
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbz5fXQC4KUpuqd4qRRgVzEo-nmvZuQSXbDKzWPCNwZ8sJ6_65Eys9zoKxFwxfdRttdj/exec";
+
+    function showTab(n) {
+        document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        document.getElementById('tab'+n).classList.add('active');
+        document.querySelectorAll('.nav-item')[n-1].classList.add('active');
+    }
+
+    async function loadData() {
+        const res = await fetch(GAS_URL);
+        const data = await res.json();
+        
+        // 予定表示
+        const s = data["予定"];
+        document.getElementById('view-schedule').innerText = (s && s[1]) ? s[1][0] + "\n" + s[1][1] : "未設定";
+
+        // リスト表示
+        renderList(data["歌枠リクエスト"], 'list-song');
+        renderList(data["セリフリクエスト"], 'list-serif');
+    }
+
+    function renderList(rows, id) {
+        const el = document.getElementById(id);
+        el.innerHTML = "<h2>届いているもの</h2>";
+        if(!rows) return;
+        rows.forEach(r => {
+            const d = document.createElement('div');
+            d.className = "list-item";
+            d.innerText = r[1];
+            el.appendChild(d);
+        });
+    }
+
+    async function saveSchedule() {
+        const r = document.getElementById('in-range').value;
+        const t = document.getElementById('in-text').value;
+        document.getElementById('loading').style.display = "block";
+        await fetch(GAS_URL, {method:"POST", body:JSON.stringify({action:"save_schedule", type:"予定", range:r, text:t})});
+        location.reload();
+    }
+
+    async function sendReq(type, inputId) {
+        const v = document.getElementById(inputId).value;
+        document.getElementById('loading').style.display = "block";
+        await fetch(GAS_URL, {method:"POST", body:JSON.stringify({action:"add_request", type:type, data:v})});
+        alert("送信完了！");
+        location.reload();
+    }
+
+    loadData();
+</script>
+</body>
+</html>
