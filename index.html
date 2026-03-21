@@ -12,15 +12,18 @@
         .content.active { display: block; }
         .card { background: white; border-radius: 15px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #eee; }
         h2 { font-size: 1rem; margin: 0 0 10px 0; border-left: 4px solid var(--g); padding-left: 10px; color: var(--p); }
-        .schedule-display { border-collapse: collapse; width: 100%; font-size: 0.9rem; background: #fdfaff; border-radius: 10px; }
-        .schedule-display td { padding: 12px; border-bottom: 1px solid #eee; }
-        .schedule-display td:first-child { font-weight: bold; color: var(--p); width: 100px; }
-        .btn { border: none; padding: 12px; border-radius: 10px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .schedule-row { display: flex; gap: 5px; margin-bottom: 8px; align-items: center; }
+        .schedule-row input { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 0.8rem; }
+        .day-input { max-width: 80px; }
+        .btn { border: none; padding: 12px; border-radius: 10px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.2s; }
         .btn-p { background: var(--p); color: white; }
         .btn-g { background: var(--g); color: white; }
-        .btn-r { background: var(--r); color: white; margin-top: 10px; font-size: 0.8rem; }
-        .list-area { margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; display: none; }
-        .list-item { background: #f9f9f9; padding: 10px; border-bottom: 1px solid #eee; font-size: 0.85rem; border-radius: 5px; margin-bottom: 5px; }
+        .btn-r { background: var(--r); color: white; margin-top: 20px; font-size: 0.8rem; }
+        .schedule-display { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+        .schedule-display td { padding: 10px; border-bottom: 1px solid #eee; }
+        .schedule-display td:first-child { font-weight: bold; color: var(--p); width: 70px; }
+        .list-area { margin-top: 15px; display: none; border-top: 1px solid #eee; padding-top: 10px; }
+        .list-item { background: #fdfaff; border-bottom: 1px solid #eee; padding: 10px; font-size: 0.85rem; border-radius: 5px; margin-bottom: 5px; }
         nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #ddd; height: 70px; }
         .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; color: #888; cursor: pointer; }
         .nav-item.active { color: var(--p); font-weight: bold; }
@@ -34,44 +37,43 @@
 
 <div id="tab1" class="content active">
     <div class="card">
-        <h2>📅 現在の予定（全員公開）</h2>
+        <h2>📅 今週の予定</h2>
         <table id="view-schedule" class="schedule-display">
             <tr><td>読み込み中...</td></tr>
         </table>
     </div>
     <div class="card">
-        <p style="font-size:0.7rem; color:var(--p)">【ライバー専用：予定更新】</p>
-        <input type="text" id="sched-period" placeholder="期間（例：3/22〜3/28）" style="width:100%; padding:10px; margin-bottom:5px; border-radius:8px; border:1px solid #ddd; box-sizing:border-box;">
-        <textarea id="sched-content" placeholder="予定を入力" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; height:80px; box-sizing:border-box;"></textarea>
-        <button class="btn btn-p" onclick="updateSchedule()">予定を更新する</button>
+        <p style="font-size:0.7rem; color:var(--p)">【ライバー用編集：合言葉 3939】</p>
+        <div id="schedule-inputs"></div>
+        <button class="btn btn-p" onclick="saveSchedule()">予定を丸ごと更新</button>
     </div>
 </div>
 
 <div id="tab2" class="content">
     <div class="card">
         <h2>🎤 曲リクエスト（匿名）</h2>
-        <input type="text" id="in-song" placeholder="曲名を入力" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ddd; box-sizing:border-box;">
-        <button class="btn btn-g" onclick="sendRequest('歌枠リクエスト', 'in-song')">リクエスト送信</button>
+        <input type="text" id="in-song" placeholder="曲名などを入力" style="width:100%; box-sizing:border-box; padding:12px; border-radius:8px; border:1px solid #ddd;">
+        <button class="btn btn-g" onclick="sendReq('歌枠リクエスト', 'in-song')">リクエスト送信</button>
     </div>
     <div class="card">
         <p style="font-size:0.7rem; color:var(--p)">【ライバー専用管理】</p>
         <button class="btn btn-p" onclick="toggleList('list-song')">リクエスト一覧を表示</button>
         <div id="list-song" class="list-area"></div>
-        <button class="btn btn-r" onclick="resetData('歌枠リクエスト')">⚠️ リストをリセット</button>
+        <button class="btn btn-r" onclick="resetList('歌枠リクエスト')">⚠️ リストをリセット</button>
     </div>
 </div>
 
 <div id="tab3" class="content">
     <div class="card">
         <h2>🎬 セリフ募集（匿名）</h2>
-        <textarea id="in-serif" placeholder="セリフを入力" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ddd; height:80px; box-sizing:border-box;"></textarea>
-        <button class="btn btn-g" onclick="sendRequest('セリフリクエスト', 'in-serif')">セリフを送信</button>
+        <textarea id="in-serif" placeholder="セリフを入力" style="width:100%; box-sizing:border-box; padding:12px; border-radius:8px; border:1px solid #ddd; height:80px;"></textarea>
+        <button class="btn btn-g" onclick="sendReq('セリフリクエスト', 'in-serif')">セリフを送信</button>
     </div>
     <div class="card">
         <p style="font-size:0.7rem; color:var(--p)">【ライバー専用管理】</p>
         <button class="btn btn-p" onclick="toggleList('list-serif')">届いたセリフを表示</button>
         <div id="list-serif" class="list-area"></div>
-        <button class="btn btn-r" onclick="resetData('セリフリクエスト')">⚠️ リストをリセット</button>
+        <button class="btn btn-r" onclick="resetList('セリフリクエスト')">⚠️ リストをリセット</button>
     </div>
 </div>
 
@@ -82,9 +84,9 @@
 </nav>
 
 <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwBdvjj8X2Rkpz_oa5rSeqN27KinPC4J9T9oIWFX_WF8yP0p2eA2Fhh9pVUvmlminN7/exec";
+    // 新しいURLをセット済みです
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbwtB-OH_5KXbhrkJeQVq9ik-M6XD1uGusxyTzHJpkxdeMZ49R7t6urxr0HRM7nAVy_L/exec"; 
     const ADMIN_PW = "3939";
-    let cachedData = null;
 
     function showTab(n) {
         document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
@@ -93,23 +95,47 @@
         document.querySelectorAll('.nav-item')[n-1].classList.add('active');
     }
 
-    async function loadAllData() {
+    // 予定表の入力欄を7日分作成
+    const inputArea = document.getElementById('schedule-inputs');
+    for(let i=0; i<7; i++) {
+        inputArea.innerHTML += `
+            <div class="schedule-row">
+                <input type="text" class="day-input" placeholder="日付">
+                <input type="text" class="text-input" placeholder="内容">
+            </div>
+        `;
+    }
+
+    async function loadData() {
         try {
-            const res = await fetch(GAS_URL);
-            cachedData = await res.json();
+            const response = await fetch(GAS_URL);
+            const data = await response.json();
             
-            // 予定表示
-            const s = cachedData["予定"] || [];
-            const v = document.getElementById('view-schedule');
-            v.innerHTML = s.length > 1 ? `<tr><td>${s[1][0]}</td><td>${s[1][1].replace(/\n/g,'<br>')}</td></tr>` : "<tr><td>未設定</td></tr>";
-            
-            // リストの中身を準備（表示はさせない）
-            prepareList(cachedData["歌枠リクエスト"], 'list-song');
-            prepareList(cachedData["セリフリクエスト"], 'list-serif');
+            // 予定表の表示と反映
+            const sRows = data["予定"] || [];
+            const view = document.getElementById('view-schedule');
+            view.innerHTML = "";
+            const dayInputs = document.querySelectorAll('.day-input');
+            const textInputs = document.querySelectorAll('.text-input');
+
+            if(sRows.length > 1) {
+                for(let i=1; i < sRows.length; i++) {
+                    if(i > 7) break;
+                    view.innerHTML += `<tr><td>${sRows[i][0]}</td><td>${sRows[i][1]}</td></tr>`;
+                    dayInputs[i-1].value = sRows[i][0];
+                    textInputs[i-1].value = sRows[i][1];
+                }
+            } else {
+                view.innerHTML = "<tr><td>未設定</td></tr>";
+            }
+
+            // リクエストリストの描画
+            renderList(data["歌枠リクエスト"], 'list-song');
+            renderList(data["セリフリクエスト"], 'list-serif');
         } catch(e) { console.error(e); }
     }
 
-    function prepareList(rows, id) {
+    function renderList(rows, id) {
         const el = document.getElementById(id);
         if(!rows || rows.length <= 1) {
             el.innerHTML = "<div class='list-item'>まだありません</div>";
@@ -117,7 +143,7 @@
         }
         el.innerHTML = "";
         rows.slice(1).reverse().forEach(r => {
-            el.innerHTML += `<div class='list-item'>${r[1]}</div>`;
+            if(r[1]) el.innerHTML += `<div class="list-item">${r[1]}</div>`;
         });
     }
 
@@ -128,39 +154,40 @@
         el.style.display = (el.style.display === "block") ? "none" : "block";
     }
 
-    async function updateSchedule() {
-        const pw = prompt("パスワードを入力");
+    async function saveSchedule() {
+        const pw = prompt("パスワード(3939)");
         if(pw !== ADMIN_PW) return alert("認証失敗");
-        const p = document.getElementById('sched-period').value;
-        const c = document.getElementById('sched-content').value;
-        if(!p || !c) return alert("入力してください");
-        
+        const data = [];
+        const days = document.querySelectorAll('.day-input');
+        const texts = document.querySelectorAll('.text-input');
+        days.forEach((d, i) => {
+            if(d.value || texts[i].value) data.push([d.value, texts[i].value]);
+        });
         document.getElementById('loading').style.display = "flex";
-        await fetch(GAS_URL, {method:"POST", body:JSON.stringify({action:"save_schedule", type:"予定", data: [[p, c]]})});
+        await fetch(GAS_URL, {method:"POST", body:JSON.stringify({action:"save_schedule", type:"予定", data: data})});
         location.reload();
     }
 
-    async function sendRequest(type, inputId) {
-        const val = document.getElementById(inputId).value;
-        if(!val) return;
+    async function sendReq(type, inputId) {
+        const v = document.getElementById(inputId).value;
+        if(!v) return;
         document.getElementById('loading').style.display = "flex";
-        await fetch(GAS_URL, {method:"POST", body:JSON.stringify({action:"add_request", type:type, data:val})});
-        alert("送信しました！");
+        await fetch(GAS_URL, {method:"POST", body:JSON.stringify({action:"add_request", type:type, data:v})});
+        alert("送信完了！");
         location.reload();
     }
 
-    async function resetData(type) {
-        const pw = prompt("リセット用パスワードを入力");
+    async function resetList(type) {
+        const pw = prompt("リセットパスワード(3939)");
         if(pw !== ADMIN_PW) return alert("認証失敗");
-        if(!confirm(type + " をすべて削除しますか？")) return;
-        
+        if(!confirm(type + " をすべて消去しますか？")) return;
         document.getElementById('loading').style.display = "flex";
         await fetch(GAS_URL, {method:"POST", body:JSON.stringify({action:"reset_requests", type:type})});
         alert("リセット完了");
         location.reload();
     }
 
-    loadAllData();
+    loadData();
 </script>
 </body>
 </html>
