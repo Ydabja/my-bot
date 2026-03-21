@@ -18,7 +18,7 @@
         .btn { border: none; padding: 12px; border-radius: 10px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.2s; }
         .btn-p { background: var(--p); color: white; }
         .btn-g { background: var(--g); color: white; }
-        .btn-r { background: var(--r); color: white; margin-top: 10px; font-size: 0.8rem; }
+        .btn-r { background: var(--r); color: white; margin-top: 20px; font-size: 0.8rem; }
         .schedule-display { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
         .schedule-display td { padding: 10px; border-bottom: 1px solid #eee; }
         .schedule-display td:first-child { font-weight: bold; color: var(--p); width: 70px; }
@@ -38,9 +38,7 @@
 <div id="tab1" class="content active">
     <div class="card">
         <h2>📅 今週の予定</h2>
-        <table id="view-schedule" class="schedule-display">
-            <tr><td>読み込み中...</td></tr>
-        </table>
+        <table id="view-schedule" class="schedule-display"><tr><td>読み込み中...</td></tr></table>
     </div>
     <div class="card">
         <p style="font-size:0.7rem; color:var(--p)">【ライバー用編集：合言葉が必要】</p>
@@ -84,7 +82,7 @@
 </nav>
 
 <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwtB-OH_5KXbhrkJeQVq9ik-M6XD1uGusxyTzHJpkxdeMZ49R7t6urxr0HRM7nAVy_L/exec"; 
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzlxr5UtHCxy5UNHwA-HFO55DvJAO08Ou9PyqISc60ZnIBqXc26ptfYW0dVF_YTwD8J/exec"; 
     const ADMIN_PW = "3939";
 
     function showTab(n) {
@@ -96,12 +94,7 @@
 
     const inputArea = document.getElementById('schedule-inputs');
     for(let i=0; i<7; i++) {
-        inputArea.innerHTML += `
-            <div class="schedule-row">
-                <input type="text" class="day-input" placeholder="日付">
-                <input type="text" class="text-input" placeholder="内容">
-            </div>
-        `;
+        inputArea.innerHTML += `<div class="schedule-row"><input type="text" class="day-input" placeholder="日付"><input type="text" class="text-input" placeholder="内容"></div>`;
     }
 
     async function loadData() {
@@ -113,7 +106,6 @@
             view.innerHTML = "";
             const dayInputs = document.querySelectorAll('.day-input');
             const textInputs = document.querySelectorAll('.text-input');
-
             if(sRows.length > 1) {
                 for(let i=1; i < sRows.length; i++) {
                     if(i > 7) break;
@@ -138,13 +130,13 @@
             if(rows.length <= 1) { el.innerHTML = "<div class='list-item'>まだありません</div>"; }
             else { rows.slice(1).reverse().forEach(r => { if(r[1]) el.innerHTML += `<div class="list-item">${r[1]}</div>`; }); }
             el.style.display = "block";
-        } catch(e) { alert("データ取得失敗"); }
+        } catch(e) { alert("通信失敗"); }
         document.getElementById('loading').style.display = "none";
     }
 
     async function saveSchedule() {
-        const pw = prompt("パスワードを入力");
-        if(pw !== ADMIN_PW) return alert("失敗");
+        const pw = prompt("パスワード(3939)");
+        if(pw !== ADMIN_PW) return alert("認証失敗");
         const data = [];
         const days = document.querySelectorAll('.day-input');
         const texts = document.querySelectorAll('.text-input');
@@ -164,8 +156,8 @@
     }
 
     async function resetList(type) {
-        const pw = prompt("認証パスワードを入力");
-        if(pw !== ADMIN_PW) return alert("失敗");
+        const pw = prompt("認証パスワード(3939)");
+        if(pw !== ADMIN_PW) return alert("認証失敗");
         if(!confirm(type + " をリセットしますか？")) return;
         document.getElementById('loading').style.display = "flex";
         await fetch(GAS_URL, {method:"POST", body:JSON.stringify({action:"reset_requests", type:type})});
