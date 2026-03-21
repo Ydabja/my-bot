@@ -67,7 +67,8 @@
 </nav>
 
 <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbz5fXQC4KUpuqd4qRRgVzEo-nmvZuQSXbDKzWPCNwZ8sJ6_65Eys9zoKxFwxfdRttdj/exec";
+    // ★最新のURLに書き換えました
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbwh2R2mbuiSfBbkLz_VIW72BhQHBTTjE48WZuemCoJ-i2P7zhrZ3Un1Ogb_kTOMFNSz/exec";
 
     function showTab(n) {
         document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
@@ -77,23 +78,25 @@
     }
 
     async function loadData() {
-        const res = await fetch(GAS_URL);
-        const data = await res.json();
-        
-        // 予定表示
-        const s = data["予定"];
-        document.getElementById('view-schedule').innerText = (s && s[1]) ? s[1][0] + "\n" + s[1][1] : "未設定";
+        try {
+            const res = await fetch(GAS_URL);
+            const data = await res.json();
+            
+            const s = data["予定"];
+            document.getElementById('view-schedule').innerText = (s && s[1]) ? s[1][0] + "\n" + s[1][1] : "未設定";
 
-        // リスト表示
-        renderList(data["歌枠リクエスト"], 'list-song');
-        renderList(data["セリフリクエスト"], 'list-serif');
+            renderList(data["歌枠リクエスト"], 'list-song');
+            renderList(data["セリフリクエスト"], 'list-serif');
+        } catch(e) {
+            document.getElementById('view-schedule').innerText = "読み込みエラー。設定を確認してください。";
+        }
     }
 
     function renderList(rows, id) {
         const el = document.getElementById(id);
         el.innerHTML = "<h2>届いているもの</h2>";
-        if(!rows) return;
-        rows.forEach(r => {
+        if(!rows || rows.length <= 1) return;
+        rows.slice(1).reverse().forEach(r => {
             const d = document.createElement('div');
             d.className = "list-item";
             d.innerText = r[1];
@@ -111,6 +114,7 @@
 
     async function sendReq(type, inputId) {
         const v = document.getElementById(inputId).value;
+        if(!v) return;
         document.getElementById('loading').style.display = "block";
         await fetch(GAS_URL, {method:"POST", body:JSON.stringify({action:"add_request", type:type, data:v})});
         alert("送信完了！");
