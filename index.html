@@ -41,7 +41,7 @@
         <table id="view-schedule" class="schedule-display"><tr><td>読み込み中...</td></tr></table>
     </div>
     <div class="card">
-        <p style="font-size:0.7rem; color:var(--p)">【管理者用：要パスワード】</p>
+        <p style="font-size:0.7rem; color:var(--p)">【管理者用：マスターパスワード(1115)が必要】</p>
         <div id="schedule-inputs"></div>
         <button class="btn btn-p" onclick="saveSchedule()">予定を更新する</button>
     </div>
@@ -54,10 +54,10 @@
         <button class="btn btn-g" onclick="sendReq('歌枠リクエスト', 'in-song')">リクエストを送信</button>
     </div>
     <div class="card">
-        <p style="font-size:0.7rem; color:var(--p)">【ライバー専用管理】</p>
+        <p style="font-size:0.7rem; color:var(--p)">【ライバー専用管理：パス3939】</p>
         <button class="btn btn-p" onclick="unlockAndShow('歌枠リクエスト', 'list-song')">リクエスト一覧を表示</button>
         <div id="list-song" class="list-area"></div>
-        <button class="btn btn-r" onclick="resetList('歌枠リクエスト')">⚠️ リストをリセット</button>
+        <button class="btn btn-r" onclick="resetList('歌枠リクエスト')">⚠️ リストをリセット(1115)</button>
     </div>
 </div>
 
@@ -68,10 +68,10 @@
         <button class="btn btn-g" onclick="sendReq('セリフリクエスト', 'in-serif')">セリフを送信</button>
     </div>
     <div class="card">
-        <p style="font-size:0.7rem; color:var(--p)">【ライバー専用管理】</p>
+        <p style="font-size:0.7rem; color:var(--p)">【ライバー専用管理：パス3939】</p>
         <button class="btn btn-p" onclick="unlockAndShow('セリフリクエスト', 'list-serif')">届いたセリフを表示</button>
         <div id="list-serif" class="list-area"></div>
-        <button class="btn btn-r" onclick="resetList('セリフリクエスト')">⚠️ リストをリセット</button>
+        <button class="btn btn-r" onclick="resetList('セリフリクエスト')">⚠️ リストをリセット(1115)</button>
     </div>
 </div>
 
@@ -83,7 +83,11 @@
 
 <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxeyXNrsc2a_ovAkSMyeDMiGj1fwmqGbWCVX-Y88wQXxXSlvGj7Ke_hegWg3c_AZNeX/exec"; 
-    const ADMIN_PW = "3939";
+    
+    // --- パスワード設定完了！ ---
+    const VIEW_PW = "3939";   // 一覧を見る時
+    const MASTER_PW = "1115"; // 予定更新・リセット時
+    // -----------------------
 
     function showTab(n) {
         document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
@@ -119,7 +123,7 @@
 
     async function unlockAndShow(sheetName, displayId) {
         const pw = prompt("パスワードを入力してください");
-        if(pw !== ADMIN_PW) return alert("パスワードが違います");
+        if(pw !== VIEW_PW) return alert("パスワードが違います");
         document.getElementById('loading').style.display = "flex";
         try {
             const response = await fetch(GAS_URL);
@@ -135,8 +139,8 @@
     }
 
     async function saveSchedule() {
-        const pw = prompt("パスワードを入力してください");
-        if(pw !== ADMIN_PW) return alert("認証失敗");
+        const pw = prompt("マスターパスワードを入力してください");
+        if(pw !== MASTER_PW) return alert("認証失敗");
         const data = [];
         const days = document.querySelectorAll('.day-input');
         const texts = document.querySelectorAll('.text-input');
@@ -156,8 +160,8 @@
     }
 
     async function resetList(type) {
-        const pw = prompt("パスワードを入力してください");
-        if(pw !== ADMIN_PW) return alert("認証失敗");
+        const pw = prompt("マスターパスワードを入力してください");
+        if(pw !== MASTER_PW) return alert("認証失敗");
         if(!confirm(type + " をリセットしますか？")) return;
         document.getElementById('loading').style.display = "flex";
         await fetch(GAS_URL, {method:"POST", body:JSON.stringify({action:"reset_requests", type:type})});
